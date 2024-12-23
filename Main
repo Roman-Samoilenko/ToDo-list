@@ -1,139 +1,172 @@
+import java.util.Scanner;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
-public class TaskManager {
-    private List<Task> tasks;
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        TaskManager manager = new TaskManager();
 
-    public TaskManager() {
-        tasks = new ArrayList<>();
-    }
+        while(true) {
+            System.out.println("Введите одну из команд: add, add first, look, max, del id/time/shortest, range, completed, free time, exit.");
 
-    private boolean isValidTask(LocalTime startTime, int duration) {
-        LocalTime endTime = startTime.plusMinutes(duration);
-        if (startTime.isBefore(LocalTime.of(9, 0)) || endTime.isAfter(LocalTime.of(21, 0))) {
-            return false;
-        }
-        for (Task task : tasks) {
-            if ((startTime.isBefore(task.getEndTime()) && endTime.isAfter(task.getStartTime()))) {
-                return false;
-            }
-        }
-        return true;
-    }
+            String in = sc.nextLine();
 
-    public void addTask(LocalTime startTime, int duration, String name) {
-        if (!isValidTask(startTime, duration)) {
-            System.out.println("Некорректное время или пересечение с существующими задачами, задача не создана.");
-            return;
-        }
-        tasks.add(new Task(startTime, duration, name));
-        System.out.println("Задача создана.");
-    }
-
-    public void removeTask(int id) {
-        tasks.removeIf(task -> task.getId() == id);
-    }
-
-    public void printAllTasks() {
-        tasks.sort(Comparator.comparing(Task::getStartTime));
-        boolean f = false;
-        for (Task t : tasks) {
-            System.out.println(t);
-            f = true;
-        }
-        if (!f) {
-            System.out.println("Cписок задач пуст.");
-        }
-    }
-
-    public Task getLongestTask() {
-        tasks.sort(Comparator.comparing(Task::getDuration).thenComparing(Comparator.comparing(Task::getStartTime).reversed()));
-        return tasks.getLast();
-
-    }
-
-    public List<Task> getTasksInRange(LocalTime startRange, LocalTime endRange) {
-        List<Task> taskList = new ArrayList<>();
-        for (Task task : tasks) {
-            if ((task.getStartTime().isBefore(endRange) && task.getEndTime().isAfter(startRange))) {
-                taskList.add(task);
-            }
-        }
-        return taskList;
-    }
-
-    public List<Task> getCompletedTasksBefore(LocalTime time) {
-        List<Task> completedTasks = new ArrayList<>();
-        for (Task task : tasks) {
-            if (task.getEndTime().isBefore(time)) {
-                completedTasks.add(task);
-            }
-        }
-        return completedTasks;
-    }
-
-    public void removeTasksInStartRange(LocalTime startRange, LocalTime endRange) {
-        tasks.removeIf(task ->
-                task.getStartTime().isAfter(startRange) && task.getStartTime().isBefore(endRange));
-    }
-
-    public void removeAndTrimTasksInRange(LocalTime startRange, LocalTime endRange) {
-        List<Task> tasksToRemove = new ArrayList<>();
-
-        for (Task task : tasks) {
-            LocalTime taskStart = task.getStartTime();
-            LocalTime taskEnd = task.getEndTime();
-
-            if (taskStart.isBefore(endRange) && taskEnd.isAfter(startRange)) {
-                // Если задача полностью находится в диапазоне или полностью покрывает диапазон, удаляем её
-                if (    (taskStart.isAfter(startRange) && taskEnd.isBefore(endRange)) ||
-                        (taskStart.isBefore(startRange) && taskEnd.isAfter(endRange))) {
-                    tasksToRemove.add(task);
-                } else { // Если задача частично перекрывает диапазон, обрезаем её
-                    if (taskStart.isBefore(startRange) && taskEnd.isAfter(startRange)) {
-                        task.setEndTime(startRange);
+            switch (in) {
+                case "add":
+                    System.out.println("Введите время начала задачи c 09:00 до 21:00 (формат чч:мм):");
+                    String start = sc.nextLine();
+                    LocalTime startTime;
+                    try {
+                         startTime = LocalTime.parse(start);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
                     }
-                    if (taskEnd.isAfter(endRange) && taskStart.isBefore(endRange)) {
-                        task.setStartTime(endRange);
+                    System.out.println("Введите продолжительность задачи в минутах:");
+                    int duration;
+                    try {
+                        duration = sc.nextInt();
+                        sc.nextLine();
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат ввода");
+                        break;
                     }
-                }
+                    System.out.println("Введите название задачи:");
+                    String name = sc.nextLine();
+                    manager.addTask(startTime, duration, name);
+                    break;
+
+                case "look":
+                    manager.printAllTasks();
+                    break;
+
+                case "max":
+
+                    try {
+                        System.out.println(manager.getLongestTask());
+                    } catch (Exception e) {
+                        System.out.println("Cписок задач пуст.");
+                    }
+                    break;
+
+                case "del id":
+                    System.out.println("Введите номер задачи для удаления:");
+                    int id;
+                    try {
+                        id = sc.nextInt();
+                        sc.nextLine();
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат ввода");
+                        break;
+                    }
+                    manager.removeTask(id);
+                    break;
+
+                case "range":
+                    System.out.println("Введите время начала промежутка (формат чч:мм):");
+                    LocalTime startRange;
+                    String startR = sc.nextLine();
+                    try {
+                        startRange = LocalTime.parse(startR);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    System.out.println("Введите время конца промежутка (формат чч:мм):");
+                    LocalTime endRange;
+                    String endR = sc.nextLine();
+                    try {
+                        endRange = LocalTime.parse(endR);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    System.out.println(manager.getTasksInRange(startRange, endRange));
+                    break;
+
+                case "completed":
+                    System.out.println("Введите время (формат чч:мм):");
+                    LocalTime completedTasksBefore;
+                    String timeS = sc.nextLine();
+                    try {
+                        completedTasksBefore = LocalTime.parse(timeS);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    System.out.println("В " + completedTasksBefore + " эти задачи будут выполнены:");
+                    System.out.println(manager.getCompletedTasksBefore(completedTasksBefore));
+                    break;
+
+                case "del time":
+                    System.out.println("Введите время начала промежутка, на котором хотите удалить задачи (формат чч:мм):");
+                    LocalTime startRangeDel;
+                    String startRD = sc.nextLine();
+                    try {
+                        startRangeDel = LocalTime.parse(startRD);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    System.out.println("Введите время конца промежутка, на котором хотите удалить задачи  (формат чч:мм):");
+                    LocalTime endRangeDel;
+                    String endRD = sc.nextLine();
+                    try {
+                        endRangeDel = LocalTime.parse(endRD);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    manager.removeTasksInStartRange(startRangeDel, endRangeDel);
+                    System.out.println("Все задачи, начинающиеся на этом временном промежутке удалены.");
+                    break;
+
+                case "free time":
+                    System.out.println("Введите время начала промежутка, который хотите освободить (формат чч:мм):");
+                    LocalTime startRangeFree;
+                    String startRF = sc.nextLine();
+                    try {
+                        startRangeFree = LocalTime.parse(startRF);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    System.out.println("Введите время конца промежутка, который хотите освободить (формат чч:мм):");
+                    LocalTime endRangeFree;
+                    String endRF = sc.nextLine();
+                    try {
+                        endRangeFree = LocalTime.parse(endRF);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат времени.");
+                        break;
+                    }
+                    manager.removeAndTrimTasksInRange(startRangeFree, endRangeFree);
+                    System.out.println("Указанное время освобождено.");
+                    break;
+
+                case "del shortest":
+                    manager.removeShortestTasks();
+                    break;
+
+                case "add first":
+                    System.out.println("Введите продолжительность задачи в минутах:");
+                    int durationF;
+                    try {
+                        durationF = sc.nextInt();
+                        sc.nextLine();
+                    } catch (Exception e) {
+                        System.out.println("Ошибка: неверный формат ввода");
+                        break;
+                    }
+                    System.out.println("Введите название задачи:");
+                    String nameF = sc.nextLine();
+                    manager.addTaskInFirst(durationF, nameF);
+                    break;
+
+                case "exit":
+                    return;
+
             }
         }
-        tasks.removeAll(tasksToRemove);
-    }
-
-    public void removeShortestTasks() {
-        if (tasks.isEmpty()) {
-            System.out.println("Список задач пуст.");
-            return;
-        }
-
-        int mn = Integer.MAX_VALUE;
-        for(Task task: tasks){
-            if(task.getDuration() < mn)
-                mn = task.getDuration();
-        }
-
-        int finalMn = mn;
-        tasks.removeIf(task -> task.getDuration() == finalMn);
-
-        System.out.println("Все задачи с минимальной продолжительностью ("+ finalMn +" мин.) удалены.");
-    }
-
-    public void addTaskInFirst(int duration, String name){
-
-        LocalTime cnt = LocalTime.of(9, 0);
-        while(cnt.plusMinutes(duration).isBefore(LocalTime.of(21, 0))){
-            if(isValidTask(cnt, duration)){
-                System.out.println("Нашёлся первый свободный временной промежуток: " + cnt + " - " + cnt.plusMinutes(duration));
-                addTask(cnt, duration, name);
-                return;
-            }
-            cnt = cnt.plusMinutes(1);
-        }
-        System.out.println("Не удалось добавить задачу, не нашёлся свободный временной промежуток нужной длины.");
-
     }
 }

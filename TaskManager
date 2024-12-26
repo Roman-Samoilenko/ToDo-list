@@ -1,18 +1,14 @@
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 public class TaskManager {
-    private List<Task> tasks;
 
-    public TaskManager() {
-        tasks = new ArrayList<>();
-    }
+    private final static ArrayList<Task> tasks = new ArrayList<>();
 
     private boolean isValidTask(LocalTime startTime, int duration) {
         LocalTime endTime = startTime.plusMinutes(duration);
-        if (startTime.isBefore(LocalTime.of(9, 0)) || endTime.isAfter(LocalTime.of(21, 0))) {
+        if (startTime.isBefore(LocalTime.of(9, 0)) || endTime.isAfter(LocalTime.of(21, 0)) ) {
             return false;
         }
         for (Task task : tasks) {
@@ -37,25 +33,24 @@ public class TaskManager {
     }
 
     public void printAllTasks() {
+        if(tasks.isEmpty()) {
+            System.out.println("Список задач пуст.");
+            return;
+        }
         tasks.sort(Comparator.comparing(Task::getStartTime));
-        boolean f = false;
         for (Task t : tasks) {
             System.out.println(t);
-            f = true;
         }
-        if (!f) {
-            System.out.println("Cписок задач пуст.");
-        }
+
     }
 
     public Task getLongestTask() {
         tasks.sort(Comparator.comparing(Task::getDuration).thenComparing(Comparator.comparing(Task::getStartTime).reversed()));
         return tasks.getLast();
-
     }
 
-    public List<Task> getTasksInRange(LocalTime startRange, LocalTime endRange) {
-        List<Task> taskList = new ArrayList<>();
+    public ArrayList<Task> getTasksInRange(LocalTime startRange, LocalTime endRange) {
+        ArrayList<Task> taskList = new ArrayList<>();
         for (Task task : tasks) {
             if ((task.getStartTime().isBefore(endRange) && task.getEndTime().isAfter(startRange))) {
                 taskList.add(task);
@@ -64,8 +59,8 @@ public class TaskManager {
         return taskList;
     }
 
-    public List<Task> getCompletedTasksBefore(LocalTime time) {
-        List<Task> completedTasks = new ArrayList<>();
+    public ArrayList<Task> getCompletedTasksBefore(LocalTime time) {
+        ArrayList<Task> completedTasks = new ArrayList<>();
         for (Task task : tasks) {
             if (task.getEndTime().isBefore(time)) {
                 completedTasks.add(task);
@@ -80,22 +75,22 @@ public class TaskManager {
     }
 
     public void removeAndTrimTasksInRange(LocalTime startRange, LocalTime endRange) {
-        List<Task> tasksToRemove = new ArrayList<>();
+        ArrayList<Task> tasksToRemove = new ArrayList<>();
 
         for (Task task : tasks) {
             LocalTime taskStart = task.getStartTime();
             LocalTime taskEnd = task.getEndTime();
-
+            // Проверка на пересечение задачи и введённого промежутка
             if (taskStart.isBefore(endRange) && taskEnd.isAfter(startRange)) {
                 // Если задача полностью находится в диапазоне или полностью покрывает диапазон, удаляем её
                 if (    (taskStart.isAfter(startRange) && taskEnd.isBefore(endRange)) ||
                         (taskStart.isBefore(startRange) && taskEnd.isAfter(endRange))) {
                     tasksToRemove.add(task);
                 } else { // Если задача частично перекрывает диапазон, обрезаем её
-                    if (taskStart.isBefore(startRange) && taskEnd.isAfter(startRange)) {
+                    if (taskStart.isBefore(startRange)) {
                         task.setEndTime(startRange);
                     }
-                    if (taskEnd.isAfter(endRange) && taskStart.isBefore(endRange)) {
+                    if (taskEnd.isAfter(endRange)) {
                         task.setStartTime(endRange);
                     }
                 }
